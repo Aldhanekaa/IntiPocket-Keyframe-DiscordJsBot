@@ -1,9 +1,16 @@
 {
-    "[id].[pocketId]": {
+    "[id]": {
         "pocketId": "[pocketId]",
         "vps_username": "[vps_username]",
         "vps_ipaddress": "[vps_ipaddress]",
         "vps_port": "[vps_port]",
-        "source_path": "[source_path]"
+        "source_path": "[source_path]",
+        "type": "db-backups|file-backups",
+        "db-backups": {
+            "db": "sql",
+            "username": "intipocket",
+            "pwd": "intipocket123",
+            "databases": []
+        }
     }
 }

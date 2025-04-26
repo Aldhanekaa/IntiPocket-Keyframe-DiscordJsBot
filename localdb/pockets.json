@@ -2,6 +2,9 @@
     "[pocketId]": {
         "pocketId": "[pocketId]",
         "vps_id": "[vps_id]",
-        "destination_path": "[destination_path]"
+        "destination_path": "[destination_path]",
+        "owner_id": "[discord client id]",
+        "description": "description",
+        "type": "db-backups|file-backups"
     }
 }

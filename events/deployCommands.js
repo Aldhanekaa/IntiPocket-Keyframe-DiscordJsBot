@@ -1,7 +1,7 @@
-const { REST, Routes } = require('discord.js');
+const { REST, Routes } = require("discord.js");
 
-const fs = require('fs');
-const path = require('path');
+const fs = require("fs");
+const path = require("path");
 
 /**
  *
@@ -20,15 +20,15 @@ async function DeployDiscordBotCommand(
 ) {
   const commands = [];
 
-  const rest = new REST({ version: '10' }).setToken(bot_token);
+  const rest = new REST({ version: "10" }).setToken(bot_token);
 
   var projectFolder = path.dirname(path.resolve(__dirname));
 
   // Grab all the command files from the commands directory you created earlier
-  const commandsPath = path.join(projectFolder, 'commands');
+  const commandsPath = path.join(projectFolder, "commands");
   const commandFiles = fs
     .readdirSync(commandsPath)
-    .filter((file) => file.endsWith('.js'));
+    .filter((file) => file.endsWith(".js"));
   // console.log(commandFiles, bot_name);
 
   // Grab the SlashCommandBuilder#toJSON() output of each command's data for deployment
@@ -36,10 +36,6 @@ async function DeployDiscordBotCommand(
     const command = require(path.join(commandsPath, file));
     const commandJSON = command.data.toJSON();
     // console.log(commandJSON);
-
-    if (commandJSON.name == 'instance-admin' && instanceAdmin == false) {
-      continue;
-    }
 
     commands.push(commandJSON);
   }
@@ -52,7 +48,8 @@ async function DeployDiscordBotCommand(
       `Started refreshing ${commands.length} application (/) commands.`
     );
 
-    console.log(`client_id ${client_id}`)
+    console.log(`client_id ${client_id}`);
+    // console.log(`commands ${JSON.stringify(commands)}`)
     // The put method is used to fully refresh all commands in the guild with the current set
     const data = await rest.put(Routes.applicationCommands(client_id), {
       body: commands,

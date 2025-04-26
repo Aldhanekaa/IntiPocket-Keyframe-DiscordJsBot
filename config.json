@@ -5,7 +5,6 @@
     "channel_id": "1120214856507871242",
     "send_initial_message": true
   },
-  "blacklist_db_url": "https://nos.wjv-1.neo.id/gabutnetwork/API/SAIDB/kandangalwi/blacklist.json",
   "blacklist_channel_log": "1118424586640437320",
   "deleted_channel_log": "1134844556144279712",
   "edited_channel_log": "1134835950539771985",
@@ -15,8 +14,10 @@
     "cmds_permissions": "localdb/cmds_permissions.json",
     "prod_data": "localdb/prod_data.json",
     "train_data": "localdb/train_data.json",
-    "vps_pockets": "localdb/vps_pockets.json",
-    "pockets": "localdb/pockets.json",
-    "streams": "localdb/streams.json"
+    "vps_pockets": "../IntiPocket-LocalDB/vps_pockets.json",
+    "pockets": "../IntiPocket-LocalDB/pockets.json",
+    "streams": "../IntiPocket-LocalDB/streams.json",
+    "comms": "../IntiPocket-LocalDB/comms/",
+    "queues-delete": "../IntiPocket-LocalDB/queues-delete/"
   }
 }

@@ -1,10 +1,11 @@
 const { SlashCommandBuilder } = require("discord.js");
-
+const { localdb } = require("../config.json");
 
 const fs = require("fs");
 const path = require("path");
 
 const commandsArr = [];
+const vps_lists = [];
 
 /**
  * @type {Record<string, string>}
@@ -14,15 +15,114 @@ const commands = {};
 const training = new SlashCommandBuilder()
   .setName("super-admin")
   .setDescription("admin command")
+
   .addSubcommand((subCommand) =>
     subCommand
-      .setName("set-key")
-      .setDescription("Set secret bot key.")
-      .addStringOption((option) =>
-        option.setName("key1").setDescription("set your token")
+      .setName("show-streams")
+      .setDescription("Show lists of all streams")
+  )
+
+  .addSubcommand((subCommand) =>
+    subCommand
+      .setName("show-pockets-streams")
+      .setDescription("Show lists of all pockets and streams")
+  )
+
+  .addSubcommandGroup((subcommandGroup) =>
+    subcommandGroup
+      .setName("inti-pockets")
+      .setDescription("Various Inti Pockets Commands")
+      .addSubcommand((subcommand) =>
+        subcommand.setName("show-vps").setDescription("Show lists of vps")
       )
-      .addStringOption((option) =>
-        option.setName("key2").setDescription("set your token")
+
+      .addSubcommand((subcommand) =>
+        subcommand
+          .setName("new-pockets")
+          .setDescription("Set Training Permission")
+
+          .addStringOption((option) => {
+            return option
+              .setName("backup-type")
+              .setDescription("Select command")
+              .addChoices([
+                {
+                  name: "SQL / DB Backups",
+                  value: "db-backups",
+                },
+                {
+                  name: "File Backups",
+                  value: "file-backups",
+                },
+              ])
+              .setRequired(true);
+          })
+          .addStringOption((option) => {
+            const vps_data = require(path.join(
+              process.env.APP_DIR,
+              localdb.vps_pockets
+            ));
+            const vps_lists = Object.keys(vps_data);
+            let vps_options = [];
+
+            for (let vps_id of vps_lists) {
+              vps_options.push({
+                name: vps_id,
+                value: vps_id,
+              });
+            }
+
+            return option
+              .setName("vps")
+              .setDescription("Select the vps you want the data to backup")
+              .addChoices(vps_options)
+              .setRequired(true);
+          })
+          .addUserOption((option) =>
+            option
+              .setName("owner")
+              .setDescription("Select owner that own this pocket")
+              .setRequired(true)
+          )
+
+          .addStringOption((option) =>
+            option
+              .setName("description")
+              .setDescription("Your description for this Pocket")
+              .setRequired(false)
+          )
+      )
+      .addSubcommand((subcommand) =>
+        subcommand
+          .setName("set-vps-publickey")
+          .setDescription("Set vps public key")
+          .addStringOption((option) => {
+            const vpsPath = path.join(process.env.APP_DIR, localdb.vps_pockets);
+            const vpsData = JSON.parse(fs.readFileSync(vpsPath, "utf8"));
+            const vpsOptions = Object.keys(vpsData)
+              .filter(key => key !== "[vps_id]")
+              .map(vpsId => ({
+                name: vpsId,
+                value: vpsId
+              }));
+        
+            return option
+              .setName("vps_id")
+              .setDescription("Select the VPS to update")
+              .addChoices(...vpsOptions)
+              .setRequired(true);
+          })
+          .addStringOption((option) =>
+            option
+              .setName("public_key")
+              .setDescription("Enter the public key")
+              .setRequired(true)
+          )
+      )
+      .addSubcommand((subCommand) =>
+        subCommand
+          .setName("delete-pocket")
+          .setDescription("Delete any pocket (Super Admin only)")
       )
   )
   .addSubcommandGroup((subcommandGroup) =>
@@ -137,16 +237,27 @@ module.exports = {
    * @param {string|undefined} extInteractionId
 
    */
-  async execute(
-    interaction,
-    clientId,
-    extInteractionId,
-    BotAddons
-  ) {
+  async execute(interaction, clientId, extInteractionId, BotAddons) {
     var projectFolder = path.dirname(path.resolve(__dirname));
 
-    const subcommand = interaction.options.getSubcommand();
-    let subcommandGroupName = interaction.options.getSubcommandGroup();
+    let subcommand = undefined;
+    let subcommandGroupName = "";
+
+    try {
+      subcommand = interaction.options.getSubcommand();
+      subcommandGroupName = interaction.options.getSubcommandGroup();
+
+      console.log(subcommand, subcommandGroupName);
+      console.log(`interaction.customId ${interaction.customId}`);
+    } catch (error) {
+      if (
+        interaction.customId !== undefined &&
+        String(interaction.customId).includes(".")
+      ) {
+        const interactionCustomIds = interaction.customId.split(".");
+        subcommand = interactionCustomIds[1];
+      }
+    }
 
     // Grab all the command files from the commands directory you created earlier
     const commandsPath = path.join(projectFolder, "commands", "super-admin");
@@ -165,12 +276,7 @@ module.exports = {
         commandJSON.name == subcommand ||
         commandJSON.name == subcommandGroupName
       ) {
-        command.execute(
-          interaction,
-          clientId,
-          extInteractionId,
-          BotAddons
-        );
+        command.execute(interaction, clientId, extInteractionId, BotAddons);
         return;
       }
 

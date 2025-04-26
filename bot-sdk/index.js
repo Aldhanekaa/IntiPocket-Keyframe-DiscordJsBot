@@ -204,12 +204,15 @@ class Bot {
 
       for (const file of commandFiles) {
         const filePath = path.join(commandsPath, file);
+        // console.log(`Command File Path ${filePath}`);
         const command = require(filePath);
+        // console.log(`Command ${command}`);
 
         if (command.instanceAdmin && this.bot.instanceAdmin) {
           continue;
         }
         if ("data" in command && "execute" in command) {
+          console.log(`Command ${command.data.name}`);
           // Set a new item in the Collection with the key as the command name and the value as the exported module
           this.client.commands.set(command.data.name, command);
         } else {
