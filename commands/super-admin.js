@@ -24,6 +24,12 @@ const training = new SlashCommandBuilder()
 
   .addSubcommand((subCommand) =>
     subCommand
+      .setName("set-auto-backup-time")
+      .setDescription("Set the auto backup time for a pocket")
+  )
+
+  .addSubcommand((subCommand) =>
+    subCommand
       .setName("show-pockets-streams")
       .setDescription("Show lists of all pockets and streams")
   )
@@ -100,12 +106,12 @@ const training = new SlashCommandBuilder()
             const vpsPath = path.join(process.env.APP_DIR, localdb.vps_pockets);
             const vpsData = JSON.parse(fs.readFileSync(vpsPath, "utf8"));
             const vpsOptions = Object.keys(vpsData)
-              .filter(key => key !== "[vps_id]")
-              .map(vpsId => ({
+              .filter((key) => key !== "[vps_id]")
+              .map((vpsId) => ({
                 name: vpsId,
-                value: vpsId
+                value: vpsId,
               }));
-        
+
             return option
               .setName("vps_id")
               .setDescription("Select the VPS to update")

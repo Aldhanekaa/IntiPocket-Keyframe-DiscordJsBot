@@ -18,6 +18,8 @@
     "pockets": "../IntiPocket-LocalDB/pockets.json",
     "streams": "../IntiPocket-LocalDB/streams.json",
     "comms": "../IntiPocket-LocalDB/comms/",
-    "queues-delete": "../IntiPocket-LocalDB/queues-delete/"
+    "queues-delete": "../IntiPocket-LocalDB/queues-delete/",
+    "queues-config": "../IntiPocket-LocalDB/queues-config/",
+    "backups-time": "../IntiPocket-LocalDB/backups-time.json"
   }
 }

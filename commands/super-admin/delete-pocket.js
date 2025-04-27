@@ -49,7 +49,9 @@ module.exports = {
         .setPlaceholder("Select a pocket to delete")
         .addOptions(
           allPockets.map((pocket) => ({
-            label: `${pocket.pocketId} - ${pocket.description || "No description"}`,
+            label: `${pocket.pocketId} - ${
+              pocket.description || "No description"
+            }`,
             value: pocket.pocketId,
             description: `Type: ${pocket.type}`,
           }))
@@ -125,8 +127,12 @@ This action cannot be undone!`,
                 localdb.vps_pockets
               );
 
-              const streamsData = JSON.parse(fs.readFileSync(streamsFullPath, "utf8"));
-              const vpsData = JSON.parse(fs.readFileSync(vpsPocketsFullPath, "utf8"));
+              const streamsData = JSON.parse(
+                fs.readFileSync(streamsFullPath, "utf8")
+              );
+              const vpsData = JSON.parse(
+                fs.readFileSync(vpsPocketsFullPath, "utf8")
+              );
 
               // Find the stream for this pocket
               let streamObj = null;
@@ -140,13 +146,20 @@ This action cannot be undone!`,
               // Find the VPS for this pocket
               let vpsObj = null;
               for (const vpsId in vpsData) {
-                if (vpsData[vpsId].pockets && vpsData[vpsId].pockets.includes(selectedPocketId)) {
+                if (
+                  vpsData[vpsId].pockets &&
+                  vpsData[vpsId].pockets.includes(selectedPocketId)
+                ) {
                   vpsObj = vpsData[vpsId];
                   break;
                 }
               }
               // If not found, fallback to vps_id field on pocket
-              if (!vpsObj && selectedPocket.vps_id && vpsData[selectedPocket.vps_id]) {
+              if (
+                !vpsObj &&
+                selectedPocket.vps_id &&
+                vpsData[selectedPocket.vps_id]
+              ) {
                 vpsObj = vpsData[selectedPocket.vps_id];
               }
 
@@ -221,17 +234,35 @@ This action cannot be undone!`,
               console.log("Go script output:", stdout);
 
               // Delete the queue file after all operations
-              const queueDeletePath = path.join(
+              // const queueDeletePath = path.join(
+              //   process.env.APP_DIR,
+              //   localdb["queues-delete"],
+              //   `${selectedPocketId}.json`
+              // );
+              // try {
+              //   await fs.promises.unlink(queueDeletePath);
+              // } catch (err) {
+              //   if (err.code !== "ENOENT") {
+              //     console.error(
+              //       `Failed to delete queue file: ${queueDeletePath}`,
+              //       err
+              //     );
+              //   }
+              //   // Ignore file-not-found errors
+              // }
+
+              // Delete the queue file after all operations
+              const queueConfigPath = path.join(
                 process.env.APP_DIR,
-                localdb["queues-delete"],
+                localdb["queues-config"],
                 `${selectedPocketId}.json`
               );
               try {
-                await fs.promises.unlink(queueDeletePath);
+                await fs.promises.unlink(queueConfigPath);
               } catch (err) {
                 if (err.code !== "ENOENT") {
                   console.error(
-                    `Failed to delete queue file: ${queueDeletePath}`,
+                    `Failed to delete queue file: ${queueConfigPath}`,
                     err
                   );
                 }

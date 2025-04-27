@@ -103,10 +103,12 @@ async function createPocketConfig(pocketData, credentials = {}) {
       "db-backups": {
         db: pocketData["db-backups"].db,
         username: credentials.db_username,
-        pwd: credentials.db_pwd,
+        pwd: pocketData["db-backups"].password,
         databases: credentials.db_databases || [],
       },
       public_key: credentials.public_key,
+      pocket_vps_publickey_already_configured:
+        pocketData.stream.pocket_vps_publickey_already_configured,
     },
   };
 }
@@ -128,6 +130,18 @@ async function setupPocket(pocketConfig, interaction) {
       { cwd: path.join(process.env.APP_DIR, "../IntiPocket-Server") }
     );
     console.log(`Setup.go stdout: ${stdout}`);
+
+    // Delete the corresponding files
+    const filesToDelete = [
+      getLocalDBPath("queues-config", `${pocketConfig.pocketId}.json`),
+    ];
+
+    for (const file of filesToDelete) {
+      if (fs.existsSync(file)) {
+        fs.unlinkSync(file);
+      }
+    }
+
     if (stderr) console.error(`Setup.go stderr: ${stderr}`);
 
     await interaction.editReply(
@@ -150,7 +164,7 @@ async function handleSetupError(error, pocketConfig, interaction) {
       ? fs.readFileSync(logPath, "utf8")
       : "No log file found";
 
-    // Delete the corresponding files
+    // // Delete the corresponding files
     const filesToDelete = [
       getLocalDBPath("queues-config", `${pocketConfig.pocketId}.json`),
       getLocalDBPath("comms", `${pocketConfig.pocketId}.json`),
@@ -220,6 +234,8 @@ async function updatePocketData(pocketConfig, interaction) {
     type: pocketConfig.type,
     "db-backups": pocketConfig.stream["db-backups"],
     public_key: pocketConfig.stream.public_key,
+    pocket_vps_publickey_already_configured:
+      pocketConfig.stream.pocket_vps_publickey_already_configured,
   };
 
   await updateJSON(
@@ -250,6 +266,16 @@ async function updatePocketData(pocketConfig, interaction) {
         [vpsId]: newVPS,
       })
     );
+  }
+
+  const filesToDelete = [
+    getLocalDBPath("queues-config", `${pocketConfig.pocketId}.json`),
+  ];
+
+  for (const file of filesToDelete) {
+    if (fs.existsSync(file)) {
+      fs.unlinkSync(file);
+    }
   }
 
   await interaction.editReply(`Successfully updated data`);
@@ -299,6 +325,14 @@ const slashCommand = new SlashCommandBuilder()
       .setDescription("Your description for this Pocket")
       .setRequired(false)
   );
+
+// Add this helper function at the top with other helper functions
+async function handleCollectorTimeout(reply, collector) {
+  if (reply?.deletable) {
+    await reply.delete().catch(console.error);
+  }
+  collector.stop();
+}
 
 module.exports = {
   data: slashCommand,
@@ -501,15 +535,27 @@ module.exports = {
                     // console.log(interactionCollect.customId);
                     switch (interactionCollect.customId) {
                       case "show-vps-modal":
+                        let modalInputs = [
+                          VPS_Stream_Credential_Username_Input,
+                        ];
+                        if (
+                          !pocket_stream.stream
+                            .pocket_vps_publickey_already_configured
+                        ) {
+                          modalInputs.push(
+                            VPS_Stream_Credential_Password_Input,
+                            VPS_Stream_Credential_IpAddress_Input
+                          );
+                        } else {
+                          modalInputs.push(
+                            VPS_Stream_Credential_IpAddress_Input
+                          );
+                        }
                         // Create and show modal with VPS credentials inputs
                         const modal = createCredentialModal(
                           slashCommand,
                           pocket_data,
-                          [
-                            VPS_Stream_Credential_Username_Input,
-                            VPS_Stream_Credential_Password_Input,
-                            VPS_Stream_Credential_IpAddress_Input,
-                          ],
+                          modalInputs,
                           "Client VPS Credentials"
                         );
 
@@ -681,29 +727,47 @@ module.exports = {
         .setMaxValues(1)
         .addOptions(DB_Architectures);
 
-      let globalContent = "";
+      const already_configured_pubkey = new ButtonBuilder()
+        .setCustomId(`${slashCommand.name}.already_configured_pubkey`)
+        .setLabel(`Already Configured`)
+        .setStyle(ButtonStyle.Primary);
 
-      if (backupType == "db-backups") {
-        globalRow = new ActionRowBuilder().addComponents(
-          DB_Architecture_Inputs
-        );
+      const use_password = new ButtonBuilder()
+        .setCustomId(`${slashCommand.name}.use_password`)
+        .setLabel(`Use Password`)
+        .setStyle(ButtonStyle.Secondary);
 
-        globalContent = "Please Select One of The Database Architecture";
-      } else {
-        globalRow = new ActionRowBuilder().addComponents(
-          useCustom,
-          useDefault,
-          cancelButton
-        );
-
-        globalContent =
-          '**Select The Client VPS Credentials You Want To Configure.**\nBy using default, the selected database shall have a user called "intipocket" with "intipocket123" as the password';
-      }
+      let globalContent =
+        "**Choose How You Want To Configure The Stream**\nIf the client already configured the chosen vps's public key, you can choose the already configured option";
+      globalRow = new ActionRowBuilder().addComponents(
+        already_configured_pubkey,
+        use_password,
+        cancelButton
+      );
 
       collector = interaction.channel.createMessageComponentCollector({
         filter,
         time: 15000,
       });
+
+      collector.on("end", async (collected, reason) => {
+        if (reason === "time") {
+          if (globalReply?.deletable) {
+            if (globalReply?.deletable) {
+              await globalReply.delete().catch(console.error);
+            }
+
+            interaction
+              .reply({
+                content:
+                  "⏰ Time limit exceeded. Please try the command again.",
+                components: [],
+              })
+              .catch(console.error);
+          }
+        }
+      });
+
       globalReply = await interaction.reply({
         content: globalContent,
         components: [globalRow],
@@ -734,17 +798,46 @@ module.exports = {
           type: "",
           public_key: undefined,
           source_path: undefined,
+          pocket_vps_publickey_already_configured: false,
         },
       };
 
       collector.on("collect", async (interactionCollect) => {
-        console.log(interactionCollect.customId);
+        // console.log(interactionCollect.customId);
         pocketData.type = backupType;
         pocketData.vps_id = vps_id;
         pocketData.description = description;
         pocketData.owner_id = owner_id;
 
         switch (interactionCollect.customId) {
+          case already_configured_pubkey.toJSON().custom_id:
+            pocketData.stream.pocket_vps_publickey_already_configured = true;
+          case use_password.toJSON().custom_id:
+            if (backupType == "db-backups") {
+              globalRow = new ActionRowBuilder().addComponents(
+                DB_Architecture_Inputs
+              );
+
+              globalContent = "Please Select One of The Database Architecture";
+            } else {
+              globalRow = new ActionRowBuilder().addComponents(
+                useCustom,
+                useDefault,
+                cancelButton
+              );
+
+              globalContent = `**Select The Client (Stream) VPS Credentials You Want To Configure.**\nBy using default, the selected vps shall have a user called "intipocket" with "intipocket123" as the password`;
+            }
+
+            await interactionCollect.deferUpdate();
+
+            interactionCollect.editReply({
+              content: globalContent,
+              components: [globalRow],
+              fetchReply: true,
+            });
+            break;
+
           case DB_Architecture_Inputs.toJSON().custom_id:
             const selectedDB = interactionCollect.values[0];
             console.log(selectedDB);
@@ -803,16 +896,21 @@ module.exports = {
               globalReply.delete();
 
               await interactionCollect.showModal(modal);
-            } else {
+            } else if (backupType == "file-backups") {
+              let modalInputs = [VPS_Stream_Credential_Username_Input];
+
+              if (!pocketData.stream.pocket_vps_publickey_already_configured) {
+                modalInputs.push(VPS_Stream_Credential_Password_Input);
+                modalInputs.push(VPS_Stream_Credential_IpAddress_Input);
+              } else {
+                modalInputs.push(VPS_Stream_Credential_IpAddress_Input);
+              }
+
               // Create and show modal with VPS credentials inputs
               const modal = createCredentialModal(
                 slashCommand,
                 pocketData,
-                [
-                  VPS_Stream_Credential_Username_Input,
-                  VPS_Stream_Credential_Password_Input,
-                  VPS_Stream_Credential_IpAddress_Input,
-                ],
+                modalInputs,
                 "Client VPS Credentials"
               );
 
