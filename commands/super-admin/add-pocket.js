@@ -80,6 +80,12 @@ async function createPocketConfig(pocketData, credentials = {}) {
   console.log(`pocketData ${JSON.stringify(pocketData)}`);
   console.log(`credentials ${JSON.stringify(credentials)}`);
 
+  let vps_port = credentials.vps_port || DEFAULT_CONFIG.DEFAULT_PORT;
+
+  if (pocketData.type == "db-backups") {
+    vps_port = DEFAULT_CONFIG.DEFAULT_PORT;
+  }
+
   return {
     pocketId,
     vps_id: pocketData.vps_id,
@@ -89,7 +95,7 @@ async function createPocketConfig(pocketData, credentials = {}) {
     type: pocketData.type,
     pocket_vps_id: {
       ...vpsPocketData,
-      vps_port: credentials.vps_port || DEFAULT_CONFIG.DEFAULT_PORT,
+      vps_port: vps_port,
     },
     stream: {
       pocketId,
@@ -103,8 +109,10 @@ async function createPocketConfig(pocketData, credentials = {}) {
       "db-backups": {
         db: pocketData["db-backups"].db,
         username: credentials.db_username,
-        pwd: pocketData["db-backups"].password,
+        pwd: credentials.db_pwd,
         databases: credentials.db_databases || [],
+        host: credentials.vps_ipaddress || "",
+        port: credentials.vps_port || DEFAULT_CONFIG.DEFAULT_PORT,
       },
       public_key: credentials.public_key,
       pocket_vps_publickey_already_configured:
@@ -283,7 +291,12 @@ async function updatePocketData(pocketConfig, interaction) {
 
 const DB_Architectures = [
   {
-    label: "MySQL",
+    label: "MySql - Third Party Hosting",
+    value: "mysql-third-party",
+  },
+
+  {
+    label: "MySQL - VPS Hosted",
     value: "mysql",
   },
 ];
@@ -366,7 +379,7 @@ module.exports = {
     try {
       const VPS_Stream_Credential_Username_Input = new TextInputBuilder()
         .setCustomId(`${slashCommand.name}.vps_stream_credential_username`)
-        .setLabel("VPS Username (Should not a root user)")
+        .setLabel("Host Username (Should not a root user)")
         .setStyle(ButtonStyle.Secondary);
       const VPS_Stream_Credential_Password_Input = new TextInputBuilder()
         .setCustomId(`${slashCommand.name}.vps_stream_credential_password`)
@@ -375,7 +388,11 @@ module.exports = {
 
       const VPS_Stream_Credential_IpAddress_Input = new TextInputBuilder()
         .setCustomId(`${slashCommand.name}.vps_stream_credential_ipaddress`)
-        .setLabel("VPS IP Address")
+        .setLabel("Host Address")
+        .setStyle(ButtonStyle.Secondary);
+      const VPS_Stream_Credential_Port_Input = new TextInputBuilder()
+        .setCustomId(`${slashCommand.name}.vps_stream_credential_port`)
+        .setLabel("Host Port")
         .setStyle(ButtonStyle.Secondary);
 
       const VPS_Stream_PublicKey_Input = new TextInputBuilder()
@@ -399,6 +416,7 @@ module.exports = {
             let vps_stream_username;
             let vps_stream_pwd;
             let vps_stream_ipaddress;
+            let vps_stream_port;
 
             let vps_publickey;
             let vps_sourcepath;
@@ -453,6 +471,12 @@ module.exports = {
             } catch (error) {}
 
             try {
+              vps_stream_port = interaction.fields.getTextInputValue(
+                `${slashCommand.name}.vps_stream_credential_port`
+              );
+            } catch (error) {}
+
+            try {
               vps_publickey = interaction.fields.getTextInputValue(
                 `${slashCommand.name}.vps_stream_credential_publickey`
               );
@@ -467,6 +491,7 @@ module.exports = {
               vps_pwd: vps_stream_pwd || pocket_stream.stream.vps_pwd,
               vps_ipaddress:
                 vps_stream_ipaddress || pocket_stream.stream.vps_ipaddress,
+              vps_port: vps_stream_port || pocket_stream.stream.vps_port,
             };
 
             console.log(`POCKET STREAM TYPE ${pocket_stream.type}`);
@@ -495,7 +520,7 @@ module.exports = {
 
               try {
                 // console.log(`credentials ${JSON.stringify(credentials)}`);
-                if (credentials.vps_username == undefined) {
+                if (credentials.vps_ipaddress == undefined) {
                   const pocket_data = Object.assign({}, pocket_stream, {
                     stream: {
                       ...pocket_stream.stream,
@@ -525,8 +550,21 @@ module.exports = {
                       time: 90000,
                     });
 
+                  let interactionContent = "";
+
+                  if (
+                    pocket_stream.type == "db-backups" &&
+                    pocket_stream["db-backups"].db != "mysql"
+                  ) {
+                    interactionContent =
+                      'Click "Continue" to enter further database credentials.';
+                  } else if (pocket_stream.type == "file-backups") {
+                    interactionContent =
+                      'Click "Continue" to enter VPS credentials.';
+                  }
+
                   globalReply = await interaction.reply({
-                    content: 'Click "Continue" to enter VPS credentials.',
+                    content: interactionContent,
                     components: [row],
                     fetchReply: true,
                   });
@@ -535,28 +573,46 @@ module.exports = {
                     // console.log(interactionCollect.customId);
                     switch (interactionCollect.customId) {
                       case "show-vps-modal":
-                        let modalInputs = [
-                          VPS_Stream_Credential_Username_Input,
-                        ];
+                        let modalInputs = [];
                         if (
                           !pocket_stream.stream
                             .pocket_vps_publickey_already_configured
                         ) {
                           modalInputs.push(
+                            VPS_Stream_Credential_Username_Input,
                             VPS_Stream_Credential_Password_Input,
                             VPS_Stream_Credential_IpAddress_Input
                           );
-                        } else {
+                        } else if (
+                          pocket_stream.type == "db-backups" &&
+                          pocket_stream["db-backups"].db == "mysql"
+                        ) {
                           modalInputs.push(
+                            VPS_Stream_Credential_Username_Input,
                             VPS_Stream_Credential_IpAddress_Input
                           );
+                        } else if (
+                          pocket_stream.type == "db-backups" &&
+                          pocket_stream["db-backups"].db == "mysql-third-party"
+                        ) {
+                          modalInputs.push(
+                            VPS_Stream_Credential_IpAddress_Input,
+                            VPS_Stream_Credential_Port_Input
+                          );
+                        }
+
+                        let modalTitle = "Client VPS Credentials";
+                        if (
+                          pocket_stream["db-backups"].db == "mysql-third-party"
+                        ) {
+                          modalTitle = "Database Host Credentials";
                         }
                         // Create and show modal with VPS credentials inputs
                         const modal = createCredentialModal(
                           slashCommand,
                           pocket_data,
                           modalInputs,
-                          "Client VPS Credentials"
+                          modalTitle
                         );
 
                         if (globalReply?.deletable) {
@@ -566,9 +622,9 @@ module.exports = {
                         await interactionCollect.showModal(modal);
                         break;
                       case "cancel-vps-modal":
-                        if (globalReply?.deletable) {
-                          await globalReply.delete().catch(console.error);
-                        }
+                        // if (globalReply?.deletable) {
+                        //   await globalReply.delete().catch(console.error);
+                        // }
 
                         await interactionCollect.update({
                           content: "Operation cancelled.",
@@ -652,10 +708,6 @@ module.exports = {
                         await interactionCollect.showModal(modal);
                         break;
                       case "cancel-vps-modal":
-                        if (globalReply?.deletable) {
-                          await globalReply.delete().catch(console.error);
-                        }
-
                         await interactionCollect.update({
                           content: "Operation cancelled.",
                           components: [],
@@ -711,11 +763,11 @@ module.exports = {
       const useCustom = new ButtonBuilder()
         .setCustomId(`${slashCommand.name}.custom`)
         .setLabel("Use Custom")
-        .setStyle(ButtonStyle.Secondary);
+        .setStyle(ButtonStyle.Primary);
       const useDefault = new ButtonBuilder()
         .setCustomId(`${slashCommand.name}.default`)
         .setLabel(`Use Default`)
-        .setStyle(ButtonStyle.Primary);
+        .setStyle(ButtonStyle.Secondary);
       const cancelButton = new ButtonBuilder()
         .setCustomId(`${slashCommand.name}.cancel`)
         .setLabel(`Cancel`)
@@ -893,7 +945,9 @@ module.exports = {
 
               globalReply.delete();
 
-              await interactionCollect.showModal(modal);
+              try {
+                await interactionCollect.showModal(modal);
+              } catch (error) {}
             } else if (backupType == "file-backups") {
               let modalInputs = [VPS_Stream_Credential_Username_Input];
 
@@ -916,7 +970,9 @@ module.exports = {
                 await globalReply.delete().catch(console.error);
               }
 
-              await interactionCollect.showModal(modal);
+              try {
+                await interactionCollect.showModal(modal);
+              } catch (error) {}
             }
             break;
 
@@ -964,10 +1020,7 @@ module.exports = {
             }
             break;
           case cancelButton.toJSON().custom_id:
-            if (globalReply?.deletable) {
-              await globalReply.delete().catch(console.error);
-            }
-            await interactionCollect.reply({
+            await interactionCollect.update({
               content: "Operation Cancelled.",
               components: [],
               fetchReply: true,
