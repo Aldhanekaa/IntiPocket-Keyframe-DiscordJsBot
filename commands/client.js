@@ -22,6 +22,11 @@ const training = new SlashCommandBuilder()
   )
   .addSubcommand((subCommand) =>
     subCommand
+      .setName("show-backup-schedules")
+      .setDescription("Show lists of all backup schedules")
+  )
+  .addSubcommand((subCommand) =>
+    subCommand
       .setName("configure-pocket")
       .setDescription("Configure your pocket")
   )

@@ -91,8 +91,14 @@ module.exports = {
     await interaction.deferReply();
 
     try {
-      handleModalSubmit(interaction, clientId, extInteractionId);
-
+      const result = await handleModalSubmit(
+        interaction,
+        clientId,
+        extInteractionId
+      );
+      if (result) {
+        return;
+      }
       const userId = interaction.user.id;
       const filter = (i) => i.user.id === userId;
 
@@ -273,13 +279,15 @@ module.exports = {
       });
 
       collector.on("end", async (collected, reason) => {
-        if (reason === "time") {
-          await handleCollectorTimeout(globalReply, collector);
-          await interaction.editReply({
-            content: "Selection timed out.",
-            components: [],
-          });
-        }
+        try {
+          if (reason === "time") {
+            await handleCollectorTimeout(globalReply, collector);
+            await interaction.editReply({
+              content: "Selection timed out.",
+              components: [],
+            });
+          }
+        } catch (error) {}
       });
     } catch (error) {
       console.error("Error in set-auto-backup-time:", error);
@@ -303,7 +311,6 @@ async function handleModalSubmit(interaction, clientId, extInteractionId) {
             )
           );
         } catch (error) {
-          await interaction.deferUpdate();
           await interaction.editReply(
             "Failed to parse pocket data. Please try again."
           );
@@ -371,9 +378,11 @@ async function handleModalSubmit(interaction, clientId, extInteractionId) {
             { name: "Timezone", value: timezone }
           );
 
-        await interaction.deferUpdate();
         await interaction.editReply({ embeds: [embed] });
+        return true;
         break;
     }
   }
+
+  return false;
 }

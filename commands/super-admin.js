@@ -22,10 +22,25 @@ const training = new SlashCommandBuilder()
       .setDescription("Show lists of all streams")
   )
 
-  .addSubcommand((subCommand) =>
-    subCommand
-      .setName("set-auto-backup-time")
-      .setDescription("Set the auto backup time for a pocket")
+  .addSubcommandGroup((subcommandGroup) =>
+    subcommandGroup
+      .setName("backup-schedules")
+      .setDescription("Backup Schedules Commands")
+      .addSubcommand((subCommand) =>
+        subCommand
+          .setName("set-auto-backup-time")
+          .setDescription("Set the auto backup time for a pocket")
+      )
+      .addSubcommand((subCommand) =>
+        subCommand
+          .setName("show-backup-schedules")
+          .setDescription("Show lists of all backup schedules")
+      )
+      .addSubcommand((subCommand) =>
+        subCommand
+          .setName("delete-backup-schedule")
+          .setDescription("Delete a backup schedule")
+      )
   )
 
   .addSubcommand((subCommand) =>

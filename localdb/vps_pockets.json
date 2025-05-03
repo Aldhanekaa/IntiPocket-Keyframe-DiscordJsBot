@@ -1,10 +1,10 @@
 {
-    "VPS_HS0WLXgVdF": {
-        "bot_host": true,
-        "vps_id": "VPS_HS0WLXgVdF",
-        "vps_port": "22",
-        "vps_username": "aldhan",
-        "vps_ipaddress": "161.97.186.61",
-        "pockets": []
-    }
+  "VPS_HS0WLXgVdF": {
+    "bot_host": true,
+    "vps_id": "VPS_HS0WLXgVdF",
+    "vps_port": "22",
+    "vps_username": "root",
+    "vps_ipaddress": "167.71.219.98",
+    "pockets": []
+  }
 }

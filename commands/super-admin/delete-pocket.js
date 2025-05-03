@@ -16,6 +16,11 @@ const execPromise = util.promisify(exec);
 const { localdb } = require("../../config.json");
 const { updateJSON } = require("../../func/JSON");
 
+// Utility functions
+const getLocalDBPath = (...paths) =>
+  path.join(process.env.APP_DIR, "../IntiPocket-LocalDB", ...paths);
+const getServerPath = (...paths) =>
+  path.join(process.env.APP_DIR, "../IntiPocket-Server", ...paths);
 const slashCommand = new SlashCommandBuilder()
   .setName("delete-pocket")
   .setDescription("Delete any pocket (Super Admin only)");
@@ -170,6 +175,8 @@ This action cannot be undone!`,
                 stream: streamObj || {},
               };
 
+              console.log("Delete Queue Data:", queueData);
+
               fs.writeFileSync(queuePath, JSON.stringify(queueData, null, 2));
 
               // Run the Go delete-pocket script
@@ -234,24 +241,6 @@ This action cannot be undone!`,
               console.log("Go script output:", stdout);
 
               // Delete the queue file after all operations
-              // const queueDeletePath = path.join(
-              //   process.env.APP_DIR,
-              //   localdb["queues-delete"],
-              //   `${selectedPocketId}.json`
-              // );
-              // try {
-              //   await fs.promises.unlink(queueDeletePath);
-              // } catch (err) {
-              //   if (err.code !== "ENOENT") {
-              //     console.error(
-              //       `Failed to delete queue file: ${queueDeletePath}`,
-              //       err
-              //     );
-              //   }
-              //   // Ignore file-not-found errors
-              // }
-
-              // Delete the queue file after all operations
               const queueConfigPath = path.join(
                 process.env.APP_DIR,
                 localdb["queues-config"],
@@ -267,6 +256,35 @@ This action cannot be undone!`,
                   );
                 }
                 // Ignore file-not-found errors
+              }
+
+              // Delete the corresponding files
+              const filesToDelete = [
+                getLocalDBPath("queues-delete", `${selectedPocketId}.json`),
+                getLocalDBPath("comms-delete", `${selectedPocketId}.json`),
+                getLocalDBPath("comms", `${selectedPocketId}.json`),
+                getLocalDBPath("logs", `${selectedPocketId}.log`),
+              ];
+
+              for (const file of filesToDelete) {
+                if (fs.existsSync(file)) {
+                  fs.unlinkSync(file);
+                }
+              }
+
+              // Delete from backups-time.json
+              const backupsTimePath = path.join(
+                process.env.APP_DIR,
+                localdb["backups-time"]
+              );
+              if (fs.existsSync(backupsTimePath)) {
+                const backupsTimeData = JSON.parse(
+                  fs.readFileSync(backupsTimePath, "utf8")
+                );
+                if (backupsTimeData[selectedPocketId]) {
+                  delete backupsTimeData[selectedPocketId];
+                  await updateJSON(backupsTimePath, backupsTimeData);
+                }
               }
 
               await confirmation.update({

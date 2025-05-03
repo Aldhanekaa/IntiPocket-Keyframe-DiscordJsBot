@@ -522,7 +522,7 @@ module.exports = {
                   let collector =
                     interaction.channel.createMessageComponentCollector({
                       filter,
-                      time: 15000,
+                      time: 90000,
                     });
 
                   globalReply = await interaction.reply({
@@ -621,7 +621,7 @@ module.exports = {
                   let collector =
                     interaction.channel.createMessageComponentCollector({
                       filter,
-                      time: 15000,
+                      time: 90000,
                     });
 
                   globalReply = await interaction.reply({
@@ -673,6 +673,7 @@ module.exports = {
 
                   if (await setupPocket(pocketConfig, interaction)) {
                     await updatePocketData(pocketConfig, interaction);
+                    return;
                   }
                 }
               } catch (error) {}
@@ -747,25 +748,7 @@ module.exports = {
 
       collector = interaction.channel.createMessageComponentCollector({
         filter,
-        time: 15000,
-      });
-
-      collector.on("end", async (collected, reason) => {
-        if (reason === "time") {
-          if (globalReply?.deletable) {
-            if (globalReply?.deletable) {
-              await globalReply.delete().catch(console.error);
-            }
-
-            interaction
-              .reply({
-                content:
-                  "⏰ Time limit exceeded. Please try the command again.",
-                components: [],
-              })
-              .catch(console.error);
-          }
-        }
+        time: 90000,
       });
 
       globalReply = await interaction.reply({
@@ -801,6 +784,14 @@ module.exports = {
           pocket_vps_publickey_already_configured: false,
         },
       };
+
+      collector.on("end", async (collected, reason) => {
+        if (reason === "time") {
+          if (globalReply?.deletable) {
+            await globalReply.delete().catch(console.error);
+          }
+        }
+      });
 
       collector.on("collect", async (interactionCollect) => {
         // console.log(interactionCollect.customId);
