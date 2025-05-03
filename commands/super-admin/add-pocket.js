@@ -820,13 +820,15 @@ module.exports = {
               globalContent = `**Select The Client (Stream) VPS Credentials You Want To Configure.**\nBy using default, the selected vps shall have a user called "intipocket" with "intipocket123" as the password`;
             }
 
-            await interactionCollect.deferUpdate();
+            try {
+              await interactionCollect.deferUpdate();
 
-            interactionCollect.editReply({
-              content: globalContent,
-              components: [globalRow],
-              fetchReply: true,
-            });
+              interactionCollect.editReply({
+                content: globalContent,
+                components: [globalRow],
+                fetchReply: true,
+              });
+            } catch (error) {}
             break;
 
           case DB_Architecture_Inputs.toJSON().custom_id:
@@ -836,20 +838,25 @@ module.exports = {
             pocketData["db-backups"].db = selectedDB;
             console.log(pocketData);
 
-            await interactionCollect.deferUpdate();
+            try {
+              await interactionCollect.deferUpdate();
 
-            globalRow = new ActionRowBuilder().addComponents(
-              useCustom,
-              useDefault,
-              cancelButton
-            );
+              globalRow = new ActionRowBuilder().addComponents(
+                useCustom,
+                useDefault,
+                cancelButton
+              );
 
-            interactionCollect.editReply({
-              content:
-                '**Select The Database Credentials You Want To Configure.**\nBy using default, the selected database shall have a user called "intipocket" with "intipocket123" as the password\nIf you choose custom, the VPS username should be in the format "username@ip"',
-              components: [globalRow],
-              fetchReply: true,
-            });
+              interactionCollect.editReply({
+                content:
+                  '**Select The Database Credentials You Want To Configure.**\nBy using default, the selected database shall have a user called "intipocket" with "intipocket123" as the password\nIf you choose custom, the VPS username should be in the format "username@ip"',
+                components: [globalRow],
+                fetchReply: true,
+              });
+            } catch (error) {
+              return;
+              return;
+            }
             break;
           case useCustom.toJSON().custom_id:
             if (backupType == "db-backups") {
@@ -950,10 +957,10 @@ module.exports = {
               await interactionCollect.showModal(modal);
             } catch (error) {
               console.error("Error showing credential modal:", error);
-              await interactionCollect.reply({
-                content: `Failed to show credential form: ${error.message}`,
-                ephemeral: true,
-              });
+              // await interactionCollect.reply({
+              //   content: `Failed to show credential form: ${error.message}`,
+              //   ephemeral: true,
+              // });
             }
             break;
           case cancelButton.toJSON().custom_id:

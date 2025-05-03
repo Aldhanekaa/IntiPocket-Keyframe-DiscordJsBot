@@ -350,7 +350,7 @@ async function handleModalSubmit(interaction, clientId, extInteractionId) {
             notification: {
               on_success: true,
               on_failure: true,
-              discord_channel: interaction.channelId,
+              discord_channel: [interaction.channelId],
             },
             last_backup: null,
           };

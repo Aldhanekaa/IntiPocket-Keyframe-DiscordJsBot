@@ -261,7 +261,7 @@ This action cannot be undone!`,
               // Delete the corresponding files
               const filesToDelete = [
                 getLocalDBPath("queues-delete", `${selectedPocketId}.json`),
-                getLocalDBPath("comms-delete", `${selectedPocketId}.json`),
+                getLocalDBPath("comms-delete", `${selectedPocketId}-comm.json`),
                 getLocalDBPath("comms", `${selectedPocketId}.json`),
                 getLocalDBPath("logs", `${selectedPocketId}.log`),
               ];
@@ -287,19 +287,19 @@ This action cannot be undone!`,
                 }
               }
 
-              await confirmation.update({
+              await interaction.editReply({
                 content: `Successfully deleted pocket ${selectedPocketId} and updated all associated data.`,
                 components: [],
               });
             } catch (error) {
               console.error("Error during pocket deletion:", error);
-              await confirmation.update({
+              await interaction.editReply({
                 content: `Failed to delete pocket: ${error.message}`,
                 components: [],
               });
             }
           } else {
-            await confirmation.update({
+            await interaction.editReply({
               content: "Pocket deletion cancelled.",
               components: [],
             });
