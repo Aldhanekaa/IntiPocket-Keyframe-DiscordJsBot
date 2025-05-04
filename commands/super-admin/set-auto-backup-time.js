@@ -65,6 +65,14 @@ function createScheduleModal(
   return modal;
 }
 
+// Add this helper function at the top with other helper functions
+function createBackButton() {
+  return new ButtonBuilder()
+    .setCustomId("back")
+    .setLabel("Back")
+    .setStyle(ButtonStyle.Secondary);
+}
+
 // Helper function to handle collector timeout
 async function handleCollectorTimeout(reply, collector) {
   if (reply?.deletable) {
@@ -147,19 +155,29 @@ module.exports = {
           const pocketId = interactionCollect.values[0];
 
           // Create buttons for different actions
+          const pocket = pocketsData[pocketId];
           const actionRow = new ActionRowBuilder().addComponents(
             new ButtonBuilder()
-              .setCustomId("add_schedule")
-              .setLabel("Add Schedule")
+              .setCustomId("configure_stream")
+              .setLabel(
+                `Config ${
+                  pocket.type === "file-backups" ? "File" : "DB"
+                } Settings`
+              )
               .setStyle(ButtonStyle.Primary),
             new ButtonBuilder()
-              .setCustomId("view_schedules")
-              .setLabel("View Schedules")
+              .setCustomId("view_config")
+              .setLabel("View Current Config")
               .setStyle(ButtonStyle.Secondary),
-            new ButtonBuilder()
-              .setCustomId("toggle_backup")
-              .setLabel("Toggle Backup")
-              .setStyle(ButtonStyle.Success)
+            // Only show managers button if user is the owner
+            ...(pocket.owner_id === userId
+              ? [
+                  new ButtonBuilder()
+                    .setCustomId("configure_managers")
+                    .setLabel("Config Managers")
+                    .setStyle(ButtonStyle.Success),
+                ]
+              : [])
           );
 
           await interactionCollect.deferUpdate();
@@ -273,6 +291,19 @@ module.exports = {
               await button.editReply(
                 `Backup for pocket ${pocketId} has been ${status}.`
               );
+            } else if (button.customId === "configure_managers") {
+              // Double check if user is the owner (in case they somehow got the button)
+              if (pocket.owner_id !== userId) {
+                await interactionCollect.editReply({
+                  content: "Only the pocket owner can manage managers.",
+                  components: [
+                    new ActionRowBuilder().addComponents(createBackButton()),
+                  ],
+                  embeds: [],
+                });
+                return;
+              }
+              // ... rest of the case
             }
           });
         }

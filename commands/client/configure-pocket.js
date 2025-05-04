@@ -29,6 +29,7 @@ const MENU_TYPES = {
   DELETE_DATABASES: "delete_databases",
   VIEW_CONFIG: "view_config",
   CONFIGURE_MANAGERS: "configure_managers",
+  PUBLIC_KEY: "public_key",
 };
 
 // Helper function to create file-backups configuration modal
@@ -457,6 +458,47 @@ async function deletePreviousMessage(interaction) {
   }
 }
 
+// Add this helper function at the top with other helper functions
+function createBackButton() {
+  return new ButtonBuilder()
+    .setCustomId("back")
+    .setLabel("Back")
+    .setStyle(ButtonStyle.Secondary);
+}
+
+// Add this helper function for creating public key modal
+function createPublicKeyModal(
+  slashCommand,
+  pocketId,
+  streamId,
+  title = "Configure Public Key",
+  customId = "public_key_modal"
+) {
+  const modal = new ModalBuilder()
+    .setCustomId(`client.${slashCommand.toJSON().name}.${customId}`)
+    .setTitle(title);
+
+  const publicKeyInput = new TextInputBuilder()
+    .setCustomId(`${slashCommand.name}.public_key`)
+    .setLabel("Public Key (Should use ssh-ed25519)")
+    .setPlaceholder("e.g., ssh-ed25519 publickey client-test")
+    .setStyle(TextInputStyle.Paragraph);
+
+  const streamData = new TextInputBuilder()
+    .setCustomId(`${slashCommand.name}.stream_data`)
+    .setLabel("Stream Data (DO NOT CHANGE IT)")
+    .setStyle(TextInputStyle.Paragraph)
+    .setValue(JSON.stringify({ pocketId, streamId }))
+    .setRequired(true);
+
+  const firstActionRow = new ActionRowBuilder().addComponents(publicKeyInput);
+  const secondActionRow = new ActionRowBuilder().addComponents(streamData);
+
+  modal.addComponents(firstActionRow, secondActionRow);
+
+  return modal;
+}
+
 const slashCommand = new SlashCommandBuilder()
   .setName("configure-pocket")
   .setDescription("Various pocket configuration commands");
@@ -562,12 +604,14 @@ module.exports = {
             if (!streamData) {
               await interactionCollect.editReply({
                 content: `No stream configuration found for pocket ${pocketId}.`,
-                components: [createNavigationButtons(false, true)],
+                components: [
+                  new ActionRowBuilder().addComponents(createBackButton()),
+                ],
               });
               return;
             }
 
-            // Create buttons based on pocket type
+            // Create buttons based on pocket type and user permissions
             const actionRow = new ActionRowBuilder().addComponents(
               new ButtonBuilder()
                 .setCustomId("configure_stream")
@@ -581,10 +625,15 @@ module.exports = {
                 .setCustomId("view_config")
                 .setLabel("View Current Config")
                 .setStyle(ButtonStyle.Secondary),
-              new ButtonBuilder()
-                .setCustomId("configure_managers")
-                .setLabel("Config Managers")
-                .setStyle(ButtonStyle.Success)
+              // Only show managers button if user is the owner
+              ...(pocket.owner_id === userId
+                ? [
+                    new ButtonBuilder()
+                      .setCustomId("configure_managers")
+                      .setLabel("Config Managers")
+                      .setStyle(ButtonStyle.Success),
+                  ]
+                : [])
             );
 
             // Add current state to navigation history
@@ -613,7 +662,11 @@ module.exports = {
                 new ButtonBuilder()
                   .setCustomId("configure_vps_connection")
                   .setLabel("Configure VPS Connection")
-                  .setStyle(ButtonStyle.Secondary)
+                  .setStyle(ButtonStyle.Secondary),
+                new ButtonBuilder()
+                  .setCustomId("configure_public_key")
+                  .setLabel("Configure Public Key")
+                  .setStyle(ButtonStyle.Success)
               );
 
               // Add current state to navigation history
@@ -833,6 +886,18 @@ module.exports = {
             break;
 
           case "configure_managers":
+            // Double check if user is the owner (in case they somehow got the button)
+            if (pocket.owner_id !== userId) {
+              await interactionCollect.editReply({
+                content: "Only the pocket owner can manage managers.",
+                components: [
+                  new ActionRowBuilder().addComponents(createBackButton()),
+                ],
+                embeds: [],
+              });
+              return;
+            }
+
             const managersModal = createManagersModal(slashCommand, pocketId);
             interactionCollect.message.navigationHistory.push({
               type: MENU_TYPES.CONFIGURE_MANAGERS,
@@ -840,6 +905,20 @@ module.exports = {
             });
             await deletePreviousMessage(interactionCollect);
             await interactionCollect.showModal(managersModal);
+            break;
+
+          case "configure_public_key":
+            const publicKeyModal = createPublicKeyModal(
+              slashCommand,
+              pocketId,
+              streamId
+            );
+            interactionCollect.message.navigationHistory.push({
+              type: MENU_TYPES.PUBLIC_KEY,
+              modal: publicKeyModal,
+            });
+            await deletePreviousMessage(interactionCollect);
+            await interactionCollect.showModal(publicKeyModal);
             break;
 
           case "back":
@@ -1115,6 +1194,15 @@ async function handleModalSubmit(interaction, clientId, extInteractionId) {
             databases: updatedDatabases,
           };
         }
+        break;
+
+      case `client.${slashCommand.toJSON().name}.public_key_modal`:
+        streamsData[streamData.streamId] = {
+          ...streamsData[streamData.streamId],
+          public_key: interaction.fields.getTextInputValue(
+            `${slashCommand.name}.public_key`
+          ),
+        };
         break;
     }
 
