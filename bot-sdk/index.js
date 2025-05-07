@@ -269,48 +269,6 @@ class Bot {
       }
     });
 
-    this.client.on("messageDelete", async (interaction) => {
-      const guild = await this.client.guilds.cache.get(
-        `${this.bot.guild_id_owner}`
-      );
-      const webhookChannel = await guild.channels.fetch(deleted_channel_log);
-
-      const exampleEmbed = new EmbedBuilder()
-        .setAuthor({
-          name: `${interaction.author.username} (${interaction.author.id})`,
-          iconURL: interaction.author.avatarURL(),
-        })
-        .setTitle("Just Deleted a Message!")
-        .setDescription(
-          `${interaction.content}\n\n<#${interaction.channelId}>\n**${guild.name}**`
-        );
-
-      webhookChannel.send({ embeds: [exampleEmbed] });
-      return;
-    });
-
-    this.client.on("messageUpdate", async (interaction) => {
-      try {
-        const guild = await this.client.guilds.cache.get(
-          `${this.bot.guild_id_owner}`
-        );
-        const webhookChannel = await guild.channels.fetch(edited_channel_log);
-
-        const exampleEmbed = new EmbedBuilder()
-          .setAuthor({
-            name: `${interaction.author.username} (${interaction.author.id})`,
-            iconURL: interaction.author.avatarURL(),
-          })
-          .setTitle("Just Edited a Message!")
-          .setDescription(
-            `**From**\n${interaction.content}\n\n**To**\n${interaction.reactions.message.contents}\n\n\n<#${interaction.channelId}>\n**${guild.name}**`
-          );
-
-        webhookChannel.send({ embeds: [exampleEmbed] });
-      } catch (err) {}
-      return;
-    });
-
     this.client.on("messageCreate", async (message) => {
       // console.log('MESSAGE R ECEIVED : ', message);
       // if (message.stickers )
