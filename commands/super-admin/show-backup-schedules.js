@@ -128,19 +128,6 @@ module.exports = {
           });
         }
       });
-
-      collector.on("end", async (collected, reason) => {
-        if (reason === "time") {
-          if (reply?.deletable) {
-            await reply.delete().catch(console.error);
-          }
-          collector.stop();
-          interaction.reply({
-            content: "Selection timed out.",
-            components: [],
-          });
-        }
-      });
     } catch (error) {
       console.error("Error in show-backup-schedules:", error);
       await interaction.editReply(

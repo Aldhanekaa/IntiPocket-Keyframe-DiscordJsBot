@@ -55,16 +55,27 @@ module.exports = {
           .setTitle(`Pocket: ${pocket.pocketId}`)
           .setColor(0x0099ff)
           .addFields(
-            {
-              name: "Description",
-              value: pocket.description || "No description",
-              inline: true,
-            },
             { name: "Type", value: pocket.type, inline: true },
             { name: "VPS ID", value: pocket.vps_id, inline: true },
             {
               name: "Owner",
               value: `<@${pocket.owner_id}>`,
+              inline: true,
+            },
+
+            {
+              name: "Remaining Backup Credits",
+              value: String(pocket.backup_config.credits),
+              inline: true,
+            },
+            {
+              name: "Backup per Week",
+              value: String(pocket.backup_config.max_backups_per_week),
+              inline: true,
+            },
+            {
+              name: "Backup Size Limit",
+              value: pocket.backup_config.size_limit,
               inline: true,
             }
           );

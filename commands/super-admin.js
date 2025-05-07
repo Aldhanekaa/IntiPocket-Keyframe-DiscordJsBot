@@ -56,6 +56,11 @@ const training = new SlashCommandBuilder()
       .addSubcommand((subcommand) =>
         subcommand.setName("show-vps").setDescription("Show lists of vps")
       )
+      .addSubcommand((subcommand) =>
+        subcommand
+          .setName("configure-pocket")
+          .setDescription("Various pocket configuration commands")
+      )
 
       .addSubcommand((subcommand) =>
         subcommand

@@ -158,26 +158,17 @@ module.exports = {
           const pocket = pocketsData[pocketId];
           const actionRow = new ActionRowBuilder().addComponents(
             new ButtonBuilder()
-              .setCustomId("configure_stream")
-              .setLabel(
-                `Config ${
-                  pocket.type === "file-backups" ? "File" : "DB"
-                } Settings`
-              )
+              .setCustomId("add_schedule")
+              .setLabel("Add Schedule")
               .setStyle(ButtonStyle.Primary),
             new ButtonBuilder()
-              .setCustomId("view_config")
-              .setLabel("View Current Config")
+              .setCustomId("view_schedules")
+              .setLabel("View Schedules")
               .setStyle(ButtonStyle.Secondary),
-            // Only show managers button if user is the owner
-            ...(pocket.owner_id === userId
-              ? [
-                  new ButtonBuilder()
-                    .setCustomId("configure_managers")
-                    .setLabel("Config Managers")
-                    .setStyle(ButtonStyle.Success),
-                ]
-              : [])
+            new ButtonBuilder()
+              .setCustomId("cancel")
+              .setLabel("Cancel")
+              .setStyle(ButtonStyle.Danger)
           );
 
           await interactionCollect.deferUpdate();
@@ -194,7 +185,19 @@ module.exports = {
             });
 
           buttonCollector.on("collect", async (button) => {
-            if (button.customId === "add_schedule") {
+            if (button.customId === "cancel") {
+              await button.deferUpdate();
+              // Delete the previous interaction message if it exists and is deletable
+              if (globalReply?.deletable) {
+                await globalReply.delete().catch(console.error);
+              }
+              await button.editReply({
+                content: "Operation cancelled.",
+                components: [],
+              });
+              buttonCollector.stop();
+              return;
+            } else if (button.customId === "add_schedule") {
               if (globalReply?.deletable) {
                 await globalReply.delete().catch(console.error);
               }

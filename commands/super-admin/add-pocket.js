@@ -24,6 +24,10 @@ const DB_Credentials = {
   password: "intipocket123",
 };
 
+const database_third_party_types = ["mysql-third-party", "mongodb-third-party"];
+
+const database_types = ["mysql", ...database_third_party_types];
+
 // Helper functions
 function createCredentialModal(
   slashCommand,
@@ -230,6 +234,11 @@ async function updatePocketData(pocketConfig, interaction) {
       "940014157045067776",
       "843626954083270656",
     ],
+    backup_config: {
+      size_limit: "500M",
+      max_backups_per_week: 1,
+      credits: 5,
+    },
   };
 
   const streamId = IDGenerator.generateCustomId("STREAM", 12);
@@ -286,7 +295,9 @@ async function updatePocketData(pocketConfig, interaction) {
     }
   }
 
-  await interaction.editReply(`Successfully updated data`);
+  await interaction.editReply(
+    `Successfully added new pocket with ID ${pocketConfig.pocketId}!`
+  );
 }
 
 const DB_Architectures = [
@@ -593,7 +604,9 @@ module.exports = {
                           );
                         } else if (
                           pocket_stream.type == "db-backups" &&
-                          pocket_stream["db-backups"].db == "mysql-third-party"
+                          database_third_party_types.includes(
+                            pocket_stream["db-backups"].db
+                          )
                         ) {
                           modalInputs.push(
                             VPS_Stream_Credential_IpAddress_Input,
@@ -603,7 +616,9 @@ module.exports = {
 
                         let modalTitle = "Client VPS Credentials";
                         if (
-                          pocket_stream["db-backups"].db == "mysql-third-party"
+                          database_third_party_types.includes(
+                            pocket_stream["db-backups"].db
+                          )
                         ) {
                           modalTitle = "Database Host Credentials";
                         }

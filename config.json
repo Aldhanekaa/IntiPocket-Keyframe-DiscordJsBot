@@ -20,6 +20,7 @@
     "comms": "../IntiPocket-LocalDB/comms/",
     "queues-delete": "../IntiPocket-LocalDB/queues-delete/",
     "queues-config": "../IntiPocket-LocalDB/queues-config/",
-    "backups-time": "../IntiPocket-LocalDB/backups-time.json"
+    "backups-time": "../IntiPocket-LocalDB/backups-time.json",
+    "manual-backups": "../IntiPocket-LocalDB/manual-backups/"
   }
 }

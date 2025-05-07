@@ -142,10 +142,6 @@ module.exports = {
             await reply.delete().catch(console.error);
           }
           collector.stop();
-          await interaction.editReply({
-            content: "Selection timed out.",
-            components: [],
-          });
         }
       });
     } catch (error) {
