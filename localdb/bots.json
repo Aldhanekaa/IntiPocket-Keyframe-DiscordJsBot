@@ -1,41 +1,41 @@
 {
-    "1119201709034582107": {
-        "bard_token": {
-            "PSIDTS": "asdfad",
-            "PSID": "sdfsdf"
-        },
-        "client_id": "1119201709034582107",
-        "guild_id_owner": "1112375480545443910",
-        "staffChannelId": "1117304252008767548",
-        "instanceAdmin": true,
-        "name": "AsixAI",
-        "activities": [
-            {
-                "name": "AI Powered Discord Bot",
-                "activity": "Playing"
-            },
-            {
-                "name": "to AKB48 ",
-                "activity": "Listening"
-            }
-        ],
-        "allowed_channels": [
-            "1120214747263008809",
-            "1117304252008767548",
-            "1120214856507871242",
-            "1136939614561640459",
-            "1073488917153710153"
-        ],
-        "mention_only_channels": [
-            "1117304252008767548",
-            "1073488917153710153",
-            "1136939614561640459"
-        ],
-        "addons": {
-            "imageRecognition": true,
-            "custom_prompts": 2,
-            "longResponse": true,
-            "discordBotTraining": true
-        }
+  "1126371419509506069": {
+    "bard_token": {
+      "PSIDTS": "asdfad",
+      "PSID": "sdfsdf"
+    },
+    "client_id": "1126371419509506069",
+    "guild_id_owner": "1112375480545443910",
+    "staffChannelId": "1117304252008767548",
+    "instanceAdmin": true,
+    "name": "AsixAI",
+    "activities": [
+      {
+        "name": "AI Powered Discord Bot",
+        "activity": "Playing"
+      },
+      {
+        "name": "to AKB48 ",
+        "activity": "Listening"
+      }
+    ],
+    "allowed_channels": [
+      "1120214747263008809",
+      "1117304252008767548",
+      "1120214856507871242",
+      "1136939614561640459",
+      "1073488917153710153"
+    ],
+    "mention_only_channels": [
+      "1117304252008767548",
+      "1073488917153710153",
+      "1136939614561640459"
+    ],
+    "addons": {
+      "imageRecognition": true,
+      "custom_prompts": 2,
+      "longResponse": true,
+      "discordBotTraining": true
     }
+  }
 }

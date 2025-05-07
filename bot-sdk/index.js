@@ -149,9 +149,9 @@ class Bot {
     this.client.on("ready", async () => {
       console.log(
         "Logged in as " +
-        this.client.user.tag +
-        " with id " +
-        this.client.user.id
+          this.client.user.tag +
+          " with id " +
+          this.client.user.id
       );
 
       // await deploy_commands(bot_token, clientId);
@@ -243,7 +243,7 @@ class Bot {
           // this.chatBot.resetToken(interaction, this.clientId);
         }
 
-        console.log('interactionCreate!');
+        console.log("interactionCreate!");
         console.log(interaction.commandName);
         const event = require("../events/interactionCreate");
 
@@ -266,7 +266,6 @@ class Bot {
         //     },
         //   ],
         // });
-
       }
     });
 
@@ -308,7 +307,7 @@ class Bot {
           );
 
         webhookChannel.send({ embeds: [exampleEmbed] });
-      } catch (err) { }
+      } catch (err) {}
       return;
     });
 
@@ -344,8 +343,6 @@ class Bot {
 
       const user = message.author;
 
-
-
       if (this.cooldowns.has(user.id)) {
         const lastUsage = this.cooldowns.get(user.id);
         const remainingCooldown =
@@ -355,85 +352,6 @@ class Bot {
       this.cooldowns.set(user.id, Date.now());
 
       // const current_timestamp = await decodeTimestamp(message.createdTimestamp);
-
-      let msg;
-      try {
-        const isChannelAllowed = this.isChannelAllowed(message.channelId);
-        // console.log('isChannelAllowed', isChannelAllowed);
-        if (isChannelAllowed == false) {
-          return;
-        }
-
-        if (this.chatBot) {
-          const isMentionOnlyChannel = IsMentionOnlyChannelFunc(
-            message.channelId,
-            this.client.user.id
-          );
-
-          // console.log(isMentionOnlyChannel, message.content);
-          if (isMentionOnlyChannel) {
-            if (!message.content.includes(`<@${this.client.user.id}>`)) {
-              return;
-            }
-          }
-
-          let imageFileLocation = undefined;
-          let imageFileName = undefined;
-
-          let msg = await handleUserMessage(
-            message,
-            this.client.guilds,
-            this.bot.addons,
-            imageFileLocation,
-            imageFileName
-          );
-
-          if (msg == 204) {
-            return;
-          }
-
-          message.channel.sendTyping();
-          const botResponse = await this.chatBot.ask(
-            msg.content.replace("!nofancylist", ""),
-            message.channelId,
-            message,
-            msg.imageFileLocation.imageFileLocation && msg.imageFileLocation,
-            this.bot.addons,
-            message.content.startsWith("!nofancylist")
-          );
-          // console.log(`msg : \n${msg}`);
-
-          if (botResponse == undefined) {
-            message.reply({
-              content: "",
-              embeds: [
-                {
-                  title: `Bot is still initialising..`,
-                  color: 0xff0000,
-                },
-              ],
-            });
-            return;
-          }
-          return;
-        }
-      } catch (err) {
-        // console.log('ERROR', err);
-        sendWebhookEmbed(
-          this.client,
-          `${this.client.user.tag} Unexpected Error with the Database socket!`,
-          "```" + err + "```" + `\nMessage :\n${msg}`,
-          "error"
-        );
-        return message.reply({
-          embeds: [
-            {
-              title: `Failed to generate response.`,
-              color: 0xff0000,
-            },
-          ],
-        });
-      }
     });
 
     console.log("LOGIN ", this.bot.name, this.botToken);
